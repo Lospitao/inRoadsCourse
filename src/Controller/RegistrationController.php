@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Entity\UserRole;
 use App\Entity\UserRoles;
 use App\Form\RegistrationFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,7 +31,7 @@ class RegistrationController extends AbstractController
                 $this->setEncodedPassword($passwordEncoder);
                 $this->persistNewUserToDataBase();
                 $this->addFlash('success', 'Se ha registrado con éxito');
-                return $this->redirectToRoute('app_register');
+                return $this->redirectToRoute('app_login');
             }
         } catch (\Doctrine\ORM\EntityNotFoundException $ex) {
             error_log($ex->getMessage());
