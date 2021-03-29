@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Página Principal{% endblock %}
+
+{% block body %}
+    <div class="screen">
+        {% for flashError in app.flashes('verify_email_error') %}
+            <div class="alert alert-danger" role="alert">{{ flashError }}</div>
+        {% endfor %}
+
+        <h1>Esto es la página principal</h1>
+
+        <h2>{{ app.user.email }}</h2>
+    </div>
+{% endblock %}
