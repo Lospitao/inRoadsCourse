@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\UserRole;
+use App\Entity\UserRoles;
 use App\Form\RegistrationFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +16,7 @@ class RegistrationController extends AbstractController
 {
     var $user;
     var $form;
+    var $userRole;
     /**
      * @Route("/register", name="app_register")
      */
@@ -24,6 +27,8 @@ class RegistrationController extends AbstractController
             $this->generateForm($request);
             if ($this->form->isSubmitted() && $this->form->isValid()) {
                 $this->setSignupDate();
+                $this->userRole = $this->getUserRole();
+                $this->setRoles();
                 $this->setEncodedPassword($passwordEncoder);
                 $this->persistNewUserToDataBase();
                 $this->addFlash('success', 'Se ha registrado con éxito');
@@ -53,7 +58,16 @@ class RegistrationController extends AbstractController
     {
         $this->user->setSignupDate(new \DateTime());
     }
-
+    private function getUserRole()
+    {
+        return $this->getDoctrine()
+            ->getRepository(UserRoles::class)
+            ->findOneBy(['id'=>UserRoles::ROLE_STUDENT]);
+    }
+    private function setRoles()
+    {
+        $this->user->setRoles([$this->userRole->getRole()]);
+    }
     private function setEncodedPassword($passwordEncoder)
     {
         $this->user->setPassword(
@@ -70,4 +84,8 @@ class RegistrationController extends AbstractController
         $entityManager->persist($this->user);
         $entityManager->flush();
     }
+
+
+
+
 }

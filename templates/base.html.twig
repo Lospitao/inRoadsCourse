@@ -33,6 +33,11 @@
         <link rel="stylesheet" type="text/css" href="{{ asset('css/base.css') }}">
 
     {% endblock %}
+    {% for flash_message in app.session.flashbag.get('notice') %}
+        <div class="flash-notice">
+            {{ flash_message }}
+        </div>
+    {% endfor %}
 </head>
 <body>
 <div class="base">
@@ -47,8 +52,8 @@
                 </ul>
             {% else %}
                 <ul class="right hide-on-med-and-down">
-                    <li><a class="waves-effect waves-light btn">Login</a></li>
-                    <li><a class="waves-effect waves-light btn" href="{{ path('register') }}">Register</a></li>
+                    <li><a class="waves-effect waves-light btn">Inicio de Sesión</a></li>
+
                 </ul>
             {% endif %}
         </div>
