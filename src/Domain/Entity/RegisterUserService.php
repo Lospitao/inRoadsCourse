@@ -14,17 +14,16 @@ class RegisterUserService
     private $userRole;
     private $flashBag;
     private $encodedPassword;
+    private $entityManager;
 
 
-    public function __construct($entityManager, $request, $urlGenerator,$user, $form, $flashBag,$loginRedirectResponse, $encodedPassword)
+    public function __construct($entityManager, $request,$user, $form, $flashBag, $encodedPassword)
     {
         $this->entityManager = $entityManager;
-        $this->urlGenerator = $urlGenerator;
         $this->request = $request;
         $this->user = $user;
         $this->form = $form;
         $this->flashBag = $flashBag;
-        $this->loginRedirectResponse = $loginRedirectResponse;
         $this->encodedPassword = $encodedPassword;
     }
     public function execute() {
@@ -37,7 +36,7 @@ class RegisterUserService
                 $this->setEncodedPassword();
                 $this->persistNewUserToDataBase();
                 $this->throwSuccessMessage();
-        return $this->loginRedirectResponse;
+
         } catch (\Exception $exception) {
             return $this->createErrorMessage($exception);
         }
@@ -63,11 +62,11 @@ class RegisterUserService
     private function getUserRole() {
         return $this->entityManager
             ->getRepository(UserRoles::class)
-            ->findOneBy(['id'=>UserRoles::ROLE_STUDENT]);
+            ->findOneBy(['id' => UserRoles::ROLE_STUDENT]);
     }
     private function setRole()
     {
-        $this->user->setRoles([$this->userRole]);
+        $this->user->setRoles([$this->userRole->getRole()]);
     }
     private function setEncodedPassword()
     {
@@ -80,9 +79,8 @@ class RegisterUserService
 
     private function persistNewUserToDataBase()
     {
-        $entityManager = $this->entityManager->getManager();
-        $entityManager->persist($this->user);
-        $entityManager->flush();
+        $this->entityManager->persist($this->user);
+        $this->entityManager->flush();
     }
 
     private function createErrorMessage(\Exception $exception)

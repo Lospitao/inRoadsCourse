@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Domain\Entity\RegisterUserService;
 use App\Entity\User;
-use App\Entity\UserRoles;
+
 use App\Form\RegistrationFormType;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +17,16 @@ class RegistrationController extends AbstractController
 {
     var $user;
     var $form;
-    var $userRole;
+    var $registerService;
+    var $entityManager;
+    var $flashBag;
+    var $encodedPassword;
+
+
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
     /**
      * @Route("/register", name="app_register")
      */
@@ -23,14 +34,12 @@ class RegistrationController extends AbstractController
     {
         try {
             $this->createNewUser();
+            $this->flashBag = $this->getFlashbag();
             $this->generateForm($request);
             if ($this->form->isSubmitted() && $this->form->isValid()) {
-                $this->setSignupDate();
-                $this->userRole = $this->getUserRole();
-                $this->setRoles();
-                $this->setEncodedPassword($passwordEncoder);
-                $this->persistNewUserToDataBase();
-                $this->addFlash('success', 'Se ha registrado con éxito');
+                $this->encodedPassword = $this->encodePassword($passwordEncoder);
+                $this->registerService = new RegisterUserService($this->entityManager, $request, $this->user, $this->form, $this->flashBag, $this->encodedPassword);
+                $this->registerService->execute();
                 return $this->redirectToRoute('app_login');
             }
         } catch (\Doctrine\ORM\EntityNotFoundException $ex) {
@@ -53,38 +62,15 @@ class RegistrationController extends AbstractController
         $this->form->handleRequest($request);
     }
 
-    private function setSignupDate()
+    private function getFlashbag()
     {
-        $this->user->setSignupDate(new \DateTime());
+       return $this->get('session')->getFlashBag();
     }
-    private function getUserRole()
+
+    private function encodePassword($passwordEncoder)
     {
-        return $this->getDoctrine()
-            ->getRepository(UserRoles::class)
-            ->findOneBy(['id'=>UserRoles::ROLE_STUDENT]);
-    }
-    private function setRoles()
-    {
-        $this->user->setRoles([$this->userRole->getRole()]);
-    }
-    private function setEncodedPassword($passwordEncoder)
-    {
-        $this->user->setPassword(
-            $passwordEncoder->encodePassword(
+            return $passwordEncoder->encodePassword(
                 $this->user,
-                $this->form->get('plainPassword')->getData()
-            )
-        );
+                $this->form->get('plainPassword')->getData());
     }
-
-    private function persistNewUserToDataBase()
-    {
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->persist($this->user);
-        $entityManager->flush();
-    }
-
-
-
-
 }
