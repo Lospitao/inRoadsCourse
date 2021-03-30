@@ -8,30 +8,24 @@ use Symfony\Component\Config\Definition\Exception\Exception;
 class RegisterUserService
 {
 
-    private $request;
-    private $user;
-    private $form;
-    private $userRole;
+
+
     private $flashBag;
-    private $encodedPassword;
     private $entityManager;
+    private $registrationParameters;
 
 
-    public function __construct($entityManager, $request,$user, $form, $flashBag, $encodedPassword)
+    public function __construct($entityManager, $registrationParameters, $flashBag)
     {
         $this->entityManager = $entityManager;
-        $this->request = $request;
-        $this->user = $user;
-        $this->form = $form;
+        $this->registrationParameters = $registrationParameters;
         $this->flashBag = $flashBag;
-        $this->encodedPassword = $encodedPassword;
     }
     public function execute() {
         try {
                 $this->lookForEmailInDataBase();
                 $this->checkIfEmailExistsInDataBase();
                 $this->setSignupDate();
-                $this->userRole = $this->getUserRole();
                 $this->setRole();
                 $this->setEncodedPassword();
                 $this->persistNewUserToDataBase();
@@ -46,7 +40,7 @@ class RegisterUserService
     {
         return $this->entityManager
             ->getRepository(User::class)
-            ->findOneBy(['email'=>$this->form->get('email')->getData()]);
+            ->findOneBy(['email'=>$this->registrationParameters['form']->get('email')->getData()]);
     }
     private function checkIfEmailExistsInDataBase()
     {
@@ -57,20 +51,16 @@ class RegisterUserService
 
     private function setSignupDate()
     {
-        $this->user->setSignupDate(new \DateTime());
+        $this->registrationParameters['user']->setSignupDate(new \DateTime());
     }
-    private function getUserRole() {
-        return $this->entityManager
-            ->getRepository(UserRoles::class)
-            ->findOneBy(['id' => UserRoles::ROLE_STUDENT]);
-    }
+
     private function setRole()
     {
-        $this->user->setRoles([$this->userRole->getRole()]);
+        $this->registrationParameters['user']->setRoles([$this->registrationParameters['userRole']]);
     }
     private function setEncodedPassword()
     {
-        $this->user->setPassword($this->encodedPassword);
+        $this->registrationParameters['user']->setPassword($this->registrationParameters['encodedPassword']);
     }
     private function throwSuccessMessage()
     {
@@ -79,7 +69,7 @@ class RegisterUserService
 
     private function persistNewUserToDataBase()
     {
-        $this->entityManager->persist($this->user);
+        $this->entityManager->persist($this->registrationParameters['user']);
         $this->entityManager->flush();
     }
 

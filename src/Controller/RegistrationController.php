@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Domain\Entity\RegisterUserService;
 use App\Entity\User;
 
+use App\Entity\UserRoles;
 use App\Form\RegistrationFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,9 +38,16 @@ class RegistrationController extends AbstractController
             $this->flashBag = $this->getFlashbag();
             $this->generateForm($request);
             if ($this->form->isSubmitted() && $this->form->isValid()) {
-                $this->encodedPassword = $this->encodePassword($passwordEncoder);
-                $this->registerService = new RegisterUserService($this->entityManager, $request, $this->user, $this->form, $this->flashBag, $this->encodedPassword);
+                $registrationParameters = [
+                    'user'=>$this->user,
+                    'form'=>$this->form,
+                    'userRole'=>$this->userRole = $this->getUserRole(),
+                    'encodedPassword' =>$this->encodedPassword = $this->encodePassword($passwordEncoder),
+                ];
+
+                $this->registerService = new RegisterUserService($this->entityManager, $registrationParameters, $this->flashBag);
                 $this->registerService->execute();
+
                 return $this->redirectToRoute('app_login');
             }
         } catch (\Doctrine\ORM\EntityNotFoundException $ex) {
@@ -72,5 +80,13 @@ class RegistrationController extends AbstractController
             return $passwordEncoder->encodePassword(
                 $this->user,
                 $this->form->get('plainPassword')->getData());
+    }
+
+    private function getUserRole()
+    {
+        $userRole= $this->entityManager
+            ->getRepository(UserRoles::class)
+            ->findOneBy(['id' => UserRoles::ROLE_STUDENT]);
+        return $userRole->getRole();
     }
 }
